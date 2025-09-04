@@ -3,6 +3,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 import connectToDatabase from "../../../../lib/mongodb";
 import User from "../../../../models/User";
+import { GitHubEmail, GitHubUser } from "../../../../lib/types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    let githubUser = userResponse.data;
+    const githubUser: GitHubUser = userResponse.data;
 
     // If email is not present, fetch user emails and get primary verified email
     if (!githubUser.email) {
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
       );
       const emails = emailsResponse.data;
       const primaryEmailObj = emails.find(
-        (emailObj: any) => emailObj.primary && emailObj.verified
+        (emailObj: GitHubEmail) => emailObj.primary && emailObj.verified
       );
       if (primaryEmailObj) {
         githubUser.email = primaryEmailObj.email;

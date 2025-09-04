@@ -4,6 +4,11 @@ import jwt from "jsonwebtoken";
 import connectToDatabase from "../../../lib/mongodb";
 import User from "../../../models/User";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GitHubRepository,
+  GitHubFile,
+  FileWithContent,
+} from "../../../lib/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -30,7 +35,7 @@ export async function POST(request: NextRequest) {
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
@@ -70,7 +75,7 @@ export async function POST(request: NextRequest) {
     const contents = contentsResponse.data;
 
     // Filter for key files
-    const keyFiles = contents.filter((item: any) => {
+    const keyFiles = contents.filter((item: GitHubFile) => {
       const keyFileNames = [
         "package.json",
         "README.md",
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch content of key files
     const filesWithContent = await Promise.all(
-      keyFiles.slice(0, 10).map(async (file: any) => {
+      keyFiles.slice(0, 10).map(async (file: GitHubFile) => {
         try {
           const fileResponse = await axios.get(file.url);
           return {
@@ -105,7 +110,7 @@ export async function POST(request: NextRequest) {
               "utf-8"
             ),
           };
-        } catch (error) {
+        } catch {
           return {
             name: file.name,
             path: file.path,
@@ -126,12 +131,21 @@ export async function POST(request: NextRequest) {
       files: filesWithContent,
       aiAnalysis,
       readme: "",
+      stars: repoData.stargazers_count,
+      updatedAt: repoData.updated_at,
     };
 
     return NextResponse.json(analysis);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Analyze repo error:", error);
-    if (error.response && error.response.status === 404) {
+    if (
+      error instanceof Error &&
+      "response" in error &&
+      error.response &&
+      typeof error.response === "object" &&
+      "status" in error.response &&
+      error.response.status === 404
+    ) {
       return NextResponse.json(
         { error: "Repository not found" },
         { status: 404 }
@@ -145,8 +159,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateAIAnalysis(
-  repoData: any,
-  files: any[]
+  repoData: GitHubRepository,
+  files: FileWithContent[]
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -182,8 +196,8 @@ Please provide a detailed, professional analysis.
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
-  } catch (error) {
-    console.error("Gemini API error in analysis:", error);
+  } catch {
+    console.error("Gemini API error in analysis");
     return "AI analysis could not be generated at this time.";
   }
 }

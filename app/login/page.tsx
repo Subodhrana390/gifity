@@ -68,11 +68,13 @@ export default function Login() {
           isLoggedIn: true,
           user: data.user,
           token: data.token,
+          githubAccessToken: "",
         })
       );
 
       router.push("/");
     } catch (err) {
+      console.error("Login error:", err);
       setError("An unexpected error occurred");
       setIsLoading(false);
     }
@@ -165,7 +167,6 @@ export default function Login() {
               Continue with GitHub
             </button>
           </div>
-
         </div>
 
         <div className="mt-4 text-center">

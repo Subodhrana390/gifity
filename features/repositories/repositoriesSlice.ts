@@ -8,8 +8,10 @@ interface Repository {
   html_url: string;
   language: string;
   updated_at: string;
+  created_at: string;
   private: boolean;
   fork: boolean;
+  stargazers_count: number;
 }
 
 interface RepositoriesState {

@@ -3,6 +3,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 import connectToDatabase from "../../../../lib/mongodb";
 import User from "../../../../models/User";
+import { GitHubRepository } from "../../../../lib/types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     try {
       decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     } catch (err) {
+      console.log(err);
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const repositories = reposResponse.data.map((repo: any) => ({
+    const repositories = reposResponse.data.map((repo: GitHubRepository) => ({
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
@@ -50,12 +52,14 @@ export async function GET(request: NextRequest) {
       html_url: repo.html_url,
       language: repo.language,
       updated_at: repo.updated_at,
+      created_at: repo.created_at,
       private: repo.private,
       fork: repo.fork,
+      stargazers_count: repo.stargazers_count,
     }));
 
     return NextResponse.json({ repositories });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Fetch repositories error:", error);
     return NextResponse.json(
       { error: "Failed to fetch repositories" },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import { RepositoryAnalysis, FileWithContent } from "../../../lib/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -30,7 +31,10 @@ export async function POST(request: NextRequest) {
 /**
  * Summarize one file with Gemini
  */
-async function summarizeFile(file: any, model: any): Promise<string> {
+async function summarizeFile(
+  file: FileWithContent,
+  model: GenerativeModel
+): Promise<string> {
   if (!file.content) return `- ${file.name}: (empty file)`;
 
   const prompt = `
@@ -62,7 +66,7 @@ ${file.content}
 /**
  * Summarize all files in repo
  */
-async function analyzeRepo(files: any[]): Promise<string> {
+async function analyzeRepo(files: FileWithContent[]): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const summaries: string[] = [];
@@ -75,7 +79,9 @@ async function analyzeRepo(files: any[]): Promise<string> {
 /**
  * Generate README using Gemini
  */
-async function generateReadmeWithGemini(analysis: any): Promise<string> {
+async function generateReadmeWithGemini(
+  analysis: RepositoryAnalysis
+): Promise<string> {
   const { name, description, language, topics, files } = analysis;
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -110,7 +116,7 @@ Final Output: A professional README.md
   try {
     const result = await model.generateContent(prompt);
     return result.response.text();
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Gemini API error:", error);
     return generateBasicReadme(analysis); // fallback
   }
@@ -119,33 +125,31 @@ Final Output: A professional README.md
 /**
  * Fallback README generator (uses file hints if Gemini fails)
  */
-function generateBasicReadme(analysis: any): string {
+function generateBasicReadme(analysis: RepositoryAnalysis): string {
   const { name, description, language, topics, files } = analysis;
 
   let readme = `# ${name || "Project"}\n\n${description || ""}\n\n`;
 
   readme += `## Features\n\n- Written in ${language || "various languages"}\n`;
   if (topics?.length) readme += `- Topics: ${topics.join(", ")}\n`;
-  if (files?.some((f: any) => f.name === "Dockerfile"))
+  if (files?.some((f) => f.name === "Dockerfile"))
     readme += `- Dockerized setup supported\n`;
-  if (
-    files?.some((f: any) => f.name.includes("api") || f.name.includes("route"))
-  )
+  if (files?.some((f) => f.name.includes("api") || f.name.includes("route")))
     readme += `- Provides API endpoints\n`;
 
   readme += `\n## Project Structure\n\n\`\`\`\n`;
-  files?.forEach((file: any) => {
+  files?.forEach((file) => {
     readme += `${file.name}\n`;
   });
   readme += `\`\`\`\n\n`;
 
-  if (files?.some((f: any) => f.name === "package.json")) {
+  if (files?.some((f) => f.name === "package.json")) {
     readme += `## Installation\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\n`;
   }
-  if (files?.some((f: any) => f.name === "requirements.txt")) {
+  if (files?.some((f) => f.name === "requirements.txt")) {
     readme += `## Installation\n\n\`\`\`bash\npip install -r requirements.txt\npython app.py\n\`\`\`\n\n`;
   }
-  if (files?.some((f: any) => f.name === "Dockerfile")) {
+  if (files?.some((f) => f.name === "Dockerfile")) {
     readme += `## Docker\n\n\`\`\`bash\ndocker build -t ${
       name?.toLowerCase() || "app"
     } .\ndocker run -p 3000:3000 ${name?.toLowerCase() || "app"}\n\`\`\`\n\n`;

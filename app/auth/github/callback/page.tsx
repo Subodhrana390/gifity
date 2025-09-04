@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuthData } from "../../../../features/auth/authSlice";
 
-export default function GitHubCallback() {
+function GitHubCallback() {
   const [status, setStatus] = useState("Processing GitHub login...");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,7 +59,7 @@ export default function GitHubCallback() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, dispatch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center">
@@ -68,5 +68,22 @@ export default function GitHubCallback() {
         <p className="text-lg">{status}</p>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-lg">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <GitHubCallback />
+    </Suspense>
   );
 }

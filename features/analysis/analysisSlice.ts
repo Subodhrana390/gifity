@@ -7,6 +7,9 @@ interface RepoAnalysis {
   topics: string[];
   files: any[];
   readme: string;
+  stars?: number;
+  updatedAt?: string;
+  aiAnalysis?: string;
 }
 
 interface AnalysisState {

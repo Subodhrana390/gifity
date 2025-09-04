@@ -368,7 +368,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-6">
-              Documentation Shouldn't Be a Bottleneck
+              Documentation Shouldn&apos;t Be a Bottleneck
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               Every minute spent on manual documentation is a minute not spent
@@ -463,9 +463,11 @@ export default function Home() {
               Powered by Advanced AI Analysis
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Our intelligent system understands your code like a senior
-              developer, generating documentation that's accurate,
-              comprehensive, and maintainable.
+              <p>
+                {
+                  "Our intelligent system understands your code like a senior developer, generating documentation that's accurate, comprehensive, and maintainable."
+                }
+              </p>
             </p>
           </div>
 
@@ -605,7 +607,7 @@ export default function Home() {
               >
                 <div className="text-4xl mb-4">{testimonial.avatar}</div>
                 <blockquote className="text-gray-300 italic mb-6 leading-relaxed">
-                  "{testimonial.quote}"
+                  {`"${testimonial.quote}"`}{" "}
                 </blockquote>
                 <div>
                   <div className="font-semibold text-white">

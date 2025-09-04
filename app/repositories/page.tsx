@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
@@ -38,6 +38,34 @@ export default function RepositoriesPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const fetchRepositories = useCallback(
+    async (token: string) => {
+      dispatch(setLoading(true));
+      dispatch(setError(""));
+      try {
+        const response = await fetch("/api/github/repositories", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          dispatch(setRepositories(data.repositories));
+        } else {
+          const errorData = await response.json();
+          dispatch(setError(errorData.error || "Failed to fetch repositories"));
+        }
+      } catch (err) {
+        console.error("Fetch repositories error:", err);
+        dispatch(setError("Failed to fetch repositories"));
+      } finally {
+        dispatch(setLoading(false));
+      }
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     if (!isLoggedIn || !token) {
       router.push("/login");
@@ -45,31 +73,7 @@ export default function RepositoriesPage() {
     }
 
     fetchRepositories(token);
-  }, [isLoggedIn, token, router]);
-
-  const fetchRepositories = async (token: string) => {
-    dispatch(setLoading(true));
-    dispatch(setError(""));
-    try {
-      const response = await fetch("/api/github/repositories", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        dispatch(setRepositories(data.repositories));
-      } else {
-        const errorData = await response.json();
-        dispatch(setError(errorData.error || "Failed to fetch repositories"));
-      }
-    } catch (err) {
-      dispatch(setError("Failed to fetch repositories"));
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
+  }, [isLoggedIn, token, router, fetchRepositories]);
 
   const handleLogout = () => {
     // Note: Removed localStorage usage as per Claude artifacts restrictions
